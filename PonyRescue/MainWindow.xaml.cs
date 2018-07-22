@@ -4,6 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,43 +27,100 @@ namespace PonyRescue
     public partial class MainWindow : Window
     {
         private string mazeId = "875c1ba0-5a00-4210-a6e7-cb932e54d821";
+        private static readonly HttpClient client = new HttpClient();
         public MainWindow()
         {
             InitializeComponent();
+
+            this.direction.ItemsSource = new List<string>() { "north", "south", "east", "west" };
+            client.DefaultRequestHeaders
+                .Accept
+                .Add(new MediaTypeWithQualityHeaderValue("application/json"));//ACCEPT header
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private async void GetMazeState(object sender, RoutedEventArgs e)
         {
             string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
 
-            string responseBody = ExecuteGetRequest(url);
+            string responseBody = await client.GetStringAsync(url);
 
             MazeState mazeState = JsonConvert.DeserializeObject<MazeState>(responseBody);
+
+            Pathfinder pathfinder = new Pathfinder(mazeState.width, mazeState.height, mazeState.PonyLocation, mazeState.ExitLocation);
+            pathfinder.InitializeChambers(mazeState.data);
+            List<string> shortestPathToExit = pathfinder.FindShortestPath();
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private async void PrintMazeSnapshot(object sender, RoutedEventArgs e)
+        {
+            await PrintMazeSnapshot();
+        }
+
+        private async Task PrintMazeSnapshot()
         {
             string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId + @"/print";
-
-            string responseBody = ExecuteGetRequest(url);
+            string responseBody = await ExecuteGetRequest(url);
 
             this.MazeSnapshot.Text = String.Format(CultureInfo.InvariantCulture, responseBody);
         }
 
-        private static string ExecuteGetRequest(string url)
+        private static async Task<string> ExecuteGetRequest(string url)
         {
-            string responseBody;
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            request.AutomaticDecompression = DecompressionMethods.GZip;
-
-            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-            using (Stream stream = response.GetResponseStream())
-            using (StreamReader reader = new StreamReader(stream))
+            try
             {
-                responseBody = reader.ReadToEnd();
+                return await client.GetStringAsync(url);
             }
+            catch (Exception e)
+            {
+                //implement exception handling here
+                Console.WriteLine(e);
+                throw;
+            }
+            
+        }
 
-            return responseBody;
+        private async void MovePony(object sender, RoutedEventArgs e)
+        {
+            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
+
+            //move pony
+            string direction = this.direction.Text;
+            if (direction != string.Empty)
+            {
+                StringContent content = new StringContent("{\"direction\":\"" + direction + "\"}", Encoding.UTF8, "application/json");
+                await ExecutePostRequest(url, content);
+            }
+        }
+
+        private async Task<string> ExecutePostRequest(string url, StringContent content)
+        {
+            string responseString = "";
+            try
+            {
+                var response = await client.PostAsync(url, content);
+                responseString = await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            return responseString;
+        }
+
+        private async void RunMoveSequence(object sender, RoutedEventArgs e)
+        {
+            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
+
+            var moves = new List<string>() {"south", "south", "east", "south", "east"};
+            foreach (var direction in moves)
+            {
+                StringContent content = new StringContent("{\"direction\":\"" + direction + "\"}", Encoding.UTF8, "application/json");
+                await ExecutePostRequest(url, content);
+
+                await Task.Delay(1000);
+                await PrintMazeSnapshot();
+            }
         }
     }
 }

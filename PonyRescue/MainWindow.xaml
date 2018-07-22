@@ -6,9 +6,12 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="798.214" Width="1209.821">
     <Grid Margin="0,0,-8,15">
-        <Button Content="Get Maze State" HorizontalAlignment="Left" Margin="91,63,0,0" VerticalAlignment="Top" Width="100" Click="Button_Click" Height="23"/>
-        <Button Content="Print Maze state" HorizontalAlignment="Left" Margin="91,109,0,0" VerticalAlignment="Top" Width="100" Click="Button_Click_1"/>
+        <Button Content="Get Maze State" HorizontalAlignment="Left" Margin="91,63,0,0" VerticalAlignment="Top" Width="100" Click="GetMazeState" Height="23"/>
+        <Button Content="Print Maze state" HorizontalAlignment="Left" Margin="91,109,0,0" VerticalAlignment="Top" Width="100" Click="PrintMazeSnapshot" Height="24"/>
         <TextBox x:Name="MazeSnapshot" HorizontalAlignment="Left" Height="732" Margin="320,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="873" FontFamily="Courier New" MinWidth="25" MinHeight="25"/>
+        <Button Content="Move pony once" HorizontalAlignment="Left" Margin="32,159,0,0" VerticalAlignment="Top" Width="100" Click="MovePony"/>
+        <ComboBox x:Name="direction" HorizontalAlignment="Left" Margin="174,159,0,0" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.381,-0.419"/>
+        <Button Content="Run move sequence" HorizontalAlignment="Left" Margin="91,217,0,0" VerticalAlignment="Top" Width="123" Click="RunMoveSequence"/>
 
     </Grid>
 </Window>
