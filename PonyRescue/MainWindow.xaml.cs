@@ -26,8 +26,10 @@ namespace PonyRescue
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string mazeId = "875c1ba0-5a00-4210-a6e7-cb932e54d821";
+        private string mazeId = "28a37caf-bb56-4f5e-b26a-b419ab2828a7";
         private static readonly HttpClient client = new HttpClient();
+        private List<string> shortestPath = new List<string>();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -48,7 +50,7 @@ namespace PonyRescue
 
             Pathfinder pathfinder = new Pathfinder(mazeState.width, mazeState.height, mazeState.PonyLocation, mazeState.ExitLocation);
             pathfinder.InitializeChambers(mazeState.data);
-            List<string> shortestPathToExit = pathfinder.FindShortestPath();
+            this.shortestPath = pathfinder.FindShortestPath();
         }
 
         private async void PrintMazeSnapshot(object sender, RoutedEventArgs e)
@@ -112,9 +114,9 @@ namespace PonyRescue
         {
             string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
 
-            var moves = new List<string>() {"south", "south", "east", "south", "east"};
-            foreach (var direction in moves)
+            foreach (var direction in this.shortestPath) 
             {
+                //TODO-add ruaway feature
                 StringContent content = new StringContent("{\"direction\":\"" + direction + "\"}", Encoding.UTF8, "application/json");
                 await ExecutePostRequest(url, content);
 
