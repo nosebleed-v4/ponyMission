@@ -57,6 +57,7 @@ namespace PonyRescue
             Chambers[this.exitLocation].SetPathToExit(new List<string>());
             while(true) //TODO- make sure we never get stuck
             {
+                //TODO-add concurrency - why? because we can :)
                 List<Coordinates> chambersToExploreStartingFromPonyNext = new List<Coordinates>();
                 //find chambers in range of pony
                 foreach (Coordinates location in chambersToExploreStartingFromPony)
