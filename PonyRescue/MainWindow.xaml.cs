@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -23,6 +24,7 @@ namespace PonyRescue
     /// </summary>
     public partial class MainWindow : Window
     {
+        private string mazeId = "875c1ba0-5a00-4210-a6e7-cb932e54d821";
         public MainWindow()
         {
             InitializeComponent();
@@ -30,9 +32,25 @@ namespace PonyRescue
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            string responseBody = string.Empty;
-            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/7ae65af1-f797-441f-9df2-893821da0e04";
+            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
 
+            string responseBody = ExecuteGetRequest(url);
+
+            MazeState mazeState = JsonConvert.DeserializeObject<MazeState>(responseBody);
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId + @"/print";
+
+            string responseBody = ExecuteGetRequest(url);
+
+            this.MazeSnapshot.Text = String.Format(CultureInfo.InvariantCulture, responseBody);
+        }
+
+        private static string ExecuteGetRequest(string url)
+        {
+            string responseBody;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.AutomaticDecompression = DecompressionMethods.GZip;
 
@@ -43,8 +61,7 @@ namespace PonyRescue
                 responseBody = reader.ReadToEnd();
             }
 
-            MazeState mazeState = JsonConvert.DeserializeObject<MazeState>(responseBody);
-            //Console.WriteLine(responseBody);
+            return responseBody;
         }
     }
 }

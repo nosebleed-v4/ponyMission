@@ -3,12 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:PonyRescue"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="798.214" Width="1209.821">
     <Grid Margin="0,0,-8,15">
-        <Button Content="Get Maze State" HorizontalAlignment="Left" Margin="89,63,0,0" VerticalAlignment="Top" Width="100" Click="Button_Click" Height="23"/>
-        <Button Content="Print Maze state" HorizontalAlignment="Left" Margin="89,109,0,0" VerticalAlignment="Top" Width="100"/>
+        <Button Content="Get Maze State" HorizontalAlignment="Left" Margin="91,63,0,0" VerticalAlignment="Top" Width="100" Click="Button_Click" Height="23"/>
+        <Button Content="Print Maze state" HorizontalAlignment="Left" Margin="91,109,0,0" VerticalAlignment="Top" Width="100" Click="Button_Click_1"/>
+        <TextBox x:Name="MazeSnapshot" HorizontalAlignment="Left" Height="732" Margin="320,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="873" FontFamily="Courier New" MinWidth="25" MinHeight="25"/>
 
     </Grid>
 </Window>
