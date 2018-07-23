@@ -9,8 +9,9 @@ namespace PonyRescue
 {
     class GameController : IGameController
     {
-        private IPathFinder pathFinder;
+        private IMazeMap mazeMap;
         private IPonyChallengeFacade ponyChallangeFacade;
+        private IPonyNavigator ponyNavigator;
         private string mazeId = "";
 
         public event EventHandler MoveMadeEvent;
@@ -18,15 +19,15 @@ namespace PonyRescue
         public GameController()
         {
             ponyChallangeFacade = new PonyChallengeFacade();
+            mazeMap = new MazeMap();
+            ponyNavigator = new PonyNavigator();
         }
 
         public async Task<string> StartNewGame(int boardWidth, int boardHeight, string ponyName, int difficulty)
         {
             this.mazeId = await ponyChallangeFacade.StartNewGameAsync(boardWidth, boardHeight, ponyName, difficulty);
             var mazeState = await ponyChallangeFacade.GetMazeStateAsync(mazeId);
-
-            pathFinder = new PathFinder(boardWidth, boardHeight, mazeState.PonyLocation, mazeState.ExitLocation);
-            pathFinder.InitializeChambers(mazeState.data);
+            mazeMap.Initialize(boardWidth, boardHeight, mazeState.PonyLocation, mazeState.ExitLocation, mazeState.data);
 
             var mazeSanpshot = await ponyChallangeFacade.PrintMazeStateAsync(this.mazeId);
 
@@ -35,20 +36,21 @@ namespace PonyRescue
 
         public async Task RescuePony(int stepDelay)
         {
-            List<string> path = await pathFinder.FindShortestPathAsync();
-            //PonyNavigator.GetNextMove(path) ...?
-            foreach (var move in path)
+            var mazeState = await ponyChallangeFacade.GetMazeStateAsync(mazeId);
+            Direction move = this.ponyNavigator.GetNextMove(mazeMap, mazeState);
+
+            while (move != Direction.None)
             {
-                if (Enum.TryParse(move, true, out Direction direction))
-                {
-                    await ponyChallangeFacade.MovePonyAsync(this.mazeId, direction);
-                    var mazeSnapshot = await ponyChallangeFacade.PrintMazeStateAsync(this.mazeId);
-                    MoveMadeEvent?.Invoke(this, new GameEventArgs() {snapshot =  mazeSnapshot});
-                }
-                    
+                await ponyChallangeFacade.MovePonyAsync(this.mazeId, move);
+                var mazeSnapshot = await ponyChallangeFacade.PrintMazeStateAsync(this.mazeId);
+                MoveMadeEvent?.Invoke(this, new GameEventArgs() {snapshot = mazeSnapshot});
+
                 await Task.Delay(stepDelay);
-                
-            }
+
+                mazeState = await ponyChallangeFacade.GetMazeStateAsync(mazeId);
+                move = this.ponyNavigator.GetNextMove(mazeMap, mazeState);
+
+            } 
         }
     }
 }

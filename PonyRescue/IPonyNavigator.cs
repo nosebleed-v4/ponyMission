@@ -8,6 +8,6 @@ namespace PonyRescue
 {
     interface IPonyNavigator
     {
-        Direction GetNextMove();
+        Direction GetNextMove(IMazeMap mazeMap, MazeState mazeState);
     }
 }

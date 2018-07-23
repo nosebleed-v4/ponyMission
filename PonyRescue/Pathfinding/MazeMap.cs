@@ -8,24 +8,22 @@ using System.Windows.Documents;
 
 namespace PonyRescue
 {
-    internal class PathFinder : IPathFinder
+    internal class MazeMap : IMazeMap
     {
-        protected Coordinates ponyLocation;
-        protected Coordinates exitLocation;
-        protected int mazeWidth;
-        protected int mazeHeight;
-        protected Dictionary<Coordinates, Chamber> Chambers = null;
+        private Coordinates ponyLocation;
+        private Coordinates exitLocation;
+        private int mazeWidth;
+        private int mazeHeight;
+        private Dictionary<Coordinates, Chamber> Chambers = null;
+        public List<string> PathToExit { get; private set; }
 
-        public PathFinder(int mazeStateWidth, int mazeStateHeight, int mazeStatePonyLocation, int mazeStateExitLocation)
+        public void Initialize(int mazeStateWidth, int mazeStateHeight, int mazeStatePonyLocation, int mazeStateExitLocation, List<List<string>> data)
         {
             this.mazeWidth = mazeStateWidth;
             this.mazeHeight = mazeStateHeight;
             this.ponyLocation = new Coordinates(Coordinates.GetXCoordinate(mazeStatePonyLocation, mazeWidth), Coordinates.GetYCoordinate(mazeStatePonyLocation, mazeWidth));
             this.exitLocation = new Coordinates(Coordinates.GetXCoordinate(mazeStateExitLocation, mazeWidth), Coordinates.GetYCoordinate(mazeStateExitLocation, mazeWidth));
-        }
 
-        public void InitializeChambers(List<List<string>> data)
-        {
             Chambers = new Dictionary<Coordinates, Chamber>();
 
             for (int masterIndex = 0; masterIndex < data.Count; masterIndex++)
@@ -57,9 +55,8 @@ namespace PonyRescue
             Chambers[this.ponyLocation].SetPathFromPony(new List<string>());
             List<Coordinates> chambersToExploreStartingFromExit = new List<Coordinates>(){this.exitLocation};
             Chambers[this.exitLocation].SetPathToExit(new List<string>());
-            while(true) //TODO- make sure we never get stuck
+            while(true)
             {
-                //TODO-add concurrency - why? because we can :)
                 List<Coordinates> chambersToExploreStartingFromPonyNext = new List<Coordinates>();
                 //find chambers in range of pony
                 foreach (Coordinates location in chambersToExploreStartingFromPony)
@@ -73,7 +70,9 @@ namespace PonyRescue
                             if (neighrouringChamber.SetPathFromPony(currentChamber.PathFromPony, dir))
                             {
                                 neighrouringChamber.PathToExit.Reverse();
-                                return neighrouringChamber.PathFromPony.Concat(neighrouringChamber.PathToExit).ToList();
+                                var shortestPathFound = neighrouringChamber.PathFromPony.Concat(neighrouringChamber.PathToExit).ToList();
+                                PathToExit = shortestPathFound;
+                                return shortestPathFound;
                             }
                             chambersToExploreStartingFromPonyNext.Add(neighrouringChamber.Coordinates);
                         }   
@@ -94,7 +93,9 @@ namespace PonyRescue
                             if(neighrouringChamber.SetPathToExit(currentChamber.PathToExit, dir))
                             {
                                 neighrouringChamber.PathToExit.Reverse();
-                                return neighrouringChamber.PathFromPony.Concat(neighrouringChamber.PathToExit).ToList();
+                                var shortestPathFound = neighrouringChamber.PathFromPony.Concat(neighrouringChamber.PathToExit).ToList();
+                                PathToExit = shortestPathFound;
+                                return shortestPathFound;
                             }
                             chambersToExploreStartingFromExitNext.Add(neighrouringChamber.Coordinates);
                         }
@@ -104,6 +105,7 @@ namespace PonyRescue
             };
         }
 
+        //this was an interesting experiment, but the gain does not seem that great...
         public async Task<List<string>> FindShortestPathAsync()
         {
             var cancelationTokenSource = new CancellationTokenSource(10000); //10 seconds timeout
@@ -132,7 +134,9 @@ namespace PonyRescue
 
             var firstTaskToComplete = await Task.WhenAny(new[] { SearchFromPonyLocation, SearchFromExitLocation });
             cancelationTokenSource.Cancel();
-            return firstTaskToComplete.Status == TaskStatus.RanToCompletion ? firstTaskToComplete.Result : new List<string>();
+            var outcome = firstTaskToComplete.Status == TaskStatus.RanToCompletion ? firstTaskToComplete.Result : null;
+            this.PathToExit = outcome;
+            return outcome;
         }
 
         private List<string> PopulatePathFindingData(Coordinates startingLocation, Func<Chamber, List<string>, Direction, bool> fillPathInfoInChamber, Func<Chamber, List<string>> propertySelector, CancellationToken cancelationToken)

@@ -86,10 +86,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Json models\MazeState.cs" />
-    <Compile Include="Pathfinding\IPathFinder.cs" />
-    <Compile Include="Pathfinding\Pathfinder.cs" />
+    <Compile Include="Pathfinding\IMazeMap.cs" />
     <Compile Include="IPonyNavigator.cs" />
+    <Compile Include="Pathfinding\MazeMap.cs" />
     <Compile Include="PonyChallengeFacade.cs" />
+    <Compile Include="PonyNavigator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
