@@ -26,103 +26,39 @@ namespace PonyRescue
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string mazeId = "28a37caf-bb56-4f5e-b26a-b419ab2828a7";
-        private static readonly HttpClient client = new HttpClient();
-        private List<string> shortestPath = new List<string>();
+        private string mazeId = "656ecc24-a1ef-45f7-8387-b2766bf6c3ce";
+        private IGameController gameController = null;
+
 
         public MainWindow()
         {
             InitializeComponent();
 
-            this.direction.ItemsSource = new List<string>() { "north", "south", "east", "west" };
-            client.DefaultRequestHeaders
-                .Accept
-                .Add(new MediaTypeWithQualityHeaderValue("application/json"));//ACCEPT header
+            this.PonyName.ItemsSource = new List<string>() { "Fluttershy", "Rainbow Dash", "Twilight Sparkle", "Pinkie Pie" };
+            gameController = new GameController();
+            gameController.MoveMadeEvent += MoveMade;
         }
 
-        private async void GetMazeState(object sender, RoutedEventArgs e)
+        private async void StartNewGame(object sender, RoutedEventArgs e)
         {
-            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
+            var snapshot = await gameController.StartNewGame(Int32.Parse(this.WidthTextbox.Text), Int32.Parse(this.HeightTextbox.Text), this.PonyName.Text, Int32.Parse(this.DifficultyTextBox.Text));
 
-            string responseBody = await client.GetStringAsync(url);
-
-            MazeState mazeState = JsonConvert.DeserializeObject<MazeState>(responseBody);
-
-            Pathfinder pathfinder = new Pathfinder(mazeState.width, mazeState.height, mazeState.PonyLocation, mazeState.ExitLocation);
-            pathfinder.InitializeChambers(mazeState.data);
-            this.shortestPath = pathfinder.FindShortestPath();
-        }
-
-        private async void PrintMazeSnapshot(object sender, RoutedEventArgs e)
-        {
-            await PrintMazeSnapshot();
-        }
-
-        private async Task PrintMazeSnapshot()
-        {
-            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId + @"/print";
-            string responseBody = await ExecuteGetRequest(url);
-
-            this.MazeSnapshot.Text = String.Format(CultureInfo.InvariantCulture, responseBody);
-        }
-
-        private static async Task<string> ExecuteGetRequest(string url)
-        {
-            try
-            {
-                return await client.GetStringAsync(url);
-            }
-            catch (Exception e)
-            {
-                //implement exception handling here
-                Console.WriteLine(e);
-                throw;
-            }
-            
-        }
-
-        private async void MovePony(object sender, RoutedEventArgs e)
-        {
-            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
-
-            //move pony
-            string direction = this.direction.Text;
-            if (direction != string.Empty)
-            {
-                StringContent content = new StringContent("{\"direction\":\"" + direction + "\"}", Encoding.UTF8, "application/json");
-                await ExecutePostRequest(url, content);
-            }
-        }
-
-        private async Task<string> ExecutePostRequest(string url, StringContent content)
-        {
-            string responseString = "";
-            try
-            {
-                var response = await client.PostAsync(url, content);
-                responseString = await response.Content.ReadAsStringAsync();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            return responseString;
+            this.MazeSnapshot.Text = snapshot;
         }
 
         private async void RunMoveSequence(object sender, RoutedEventArgs e)
         {
-            string url = @"https://ponychallenge.trustpilot.com/pony-challenge/maze/" + mazeId;
-
-            foreach (var direction in this.shortestPath) 
-            {
-                //TODO-add ruaway feature
-                StringContent content = new StringContent("{\"direction\":\"" + direction + "\"}", Encoding.UTF8, "application/json");
-                await ExecutePostRequest(url, content);
-
-                await Task.Delay(1000);
-                await PrintMazeSnapshot();
-            }
+            await gameController.RescuePony(Int32.Parse(this.MoveDelay.Text));
         }
+
+        void MoveMade(object sender, EventArgs e)
+        {
+            this.MazeSnapshot.Text = (e as GameEventArgs)?.snapshot ?? "";
+        }
+    }
+
+    internal class GameEventArgs :EventArgs
+    {
+        public string snapshot;
     }
 }

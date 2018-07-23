@@ -6,12 +6,19 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="798.214" Width="1209.821">
     <Grid Margin="0,0,-8,15">
-        <Button Content="Get Maze State" HorizontalAlignment="Left" Margin="91,63,0,0" VerticalAlignment="Top" Width="100" Click="GetMazeState" Height="23"/>
-        <Button Content="Print Maze state" HorizontalAlignment="Left" Margin="91,109,0,0" VerticalAlignment="Top" Width="100" Click="PrintMazeSnapshot" Height="24"/>
         <TextBox x:Name="MazeSnapshot" HorizontalAlignment="Left" Height="732" Margin="320,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="873" FontFamily="Courier New" MinWidth="25" MinHeight="25"/>
-        <Button Content="Move pony once" HorizontalAlignment="Left" Margin="32,159,0,0" VerticalAlignment="Top" Width="100" Click="MovePony"/>
-        <ComboBox x:Name="direction" HorizontalAlignment="Left" Margin="174,159,0,0" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.381,-0.419"/>
-        <Button Content="Run move sequence" HorizontalAlignment="Left" Margin="91,217,0,0" VerticalAlignment="Top" Width="123" Click="RunMoveSequence"/>
+        <Button Content="Rescue Pony" HorizontalAlignment="Left" Margin="59,444,0,0" VerticalAlignment="Top" Width="155" Click="RunMoveSequence" RenderTransformOrigin="0.528,4.239" Height="41"/>
+        <Button Content="Start New Game" HorizontalAlignment="Left" Margin="63,325,0,0" VerticalAlignment="Top" Width="210" Click="StartNewGame" Height="22"/>
+        <TextBox x:Name="WidthTextbox" HorizontalAlignment="Left" Height="23" Margin="153,77,0,0" TextWrapping="Wrap" Text="15" VerticalAlignment="Top" Width="120"/>
+        <Label Content="Width" HorizontalAlignment="Left" Margin="59,73,0,0" VerticalAlignment="Top"/>
+        <Label Content="Height" HorizontalAlignment="Left" Margin="59,127,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="HeightTextbox" HorizontalAlignment="Left" Height="23" Margin="153,131,0,0" TextWrapping="Wrap" Text="15" VerticalAlignment="Top" Width="120"/>
+        <ComboBox x:Name="PonyName" HorizontalAlignment="Left" Margin="153,184,0,0" VerticalAlignment="Top" Width="120" SelectedIndex="0"/>
+        <Label Content="Name" HorizontalAlignment="Left" Margin="63,184,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.165,0.676"/>
+        <Label Content="difficulty" HorizontalAlignment="Left" Margin="63,248,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.333,1.245"/>
+        <TextBox x:Name="DifficultyTextBox" HorizontalAlignment="Left" Height="23" Margin="153,248,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.048,1.255"/>
+        <Label Content="move delay in ms" HorizontalAlignment="Left" Margin="16,399,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="MoveDelay" HorizontalAlignment="Left" Height="23" Margin="153,399,0,0" TextWrapping="Wrap" Text="1000" VerticalAlignment="Top" Width="120"/>
 
     </Grid>
 </Window>

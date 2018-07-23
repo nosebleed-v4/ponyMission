@@ -71,18 +71,25 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="PathfindingLogic\Chamber.cs" />
-    <Compile Include="PathfindingLogic\Coordinates.cs" />
-    <Compile Include="PathfindingLogic\Direction.cs" />
-    <Compile Include="PathfindingLogic\GameSate.cs" />
+    <Compile Include="GameController.cs" />
+    <Compile Include="IGameController.cs" />
+    <Compile Include="IPonyChallengeFacade.cs" />
+    <Compile Include="Json models\MazeId.cs" />
+    <Compile Include="Board model\Chamber.cs" />
+    <Compile Include="Board model\Coordinates.cs" />
+    <Compile Include="Board model\Direction.cs" />
+    <Compile Include="Json models\GameSate.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PathfindingLogic\MazeState.cs" />
-    <Compile Include="PathfindingLogic\Pathfinder.cs" />
+    <Compile Include="Json models\MazeState.cs" />
+    <Compile Include="Pathfinding\IPathFinder.cs" />
+    <Compile Include="Pathfinding\Pathfinder.cs" />
+    <Compile Include="IPonyNavigator.cs" />
+    <Compile Include="PonyChallengeFacade.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
