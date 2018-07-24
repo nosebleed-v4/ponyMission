@@ -73,6 +73,8 @@
     </Compile>
     <Compile Include="GameController.cs" />
     <Compile Include="IGameController.cs" />
+    <Compile Include="Pathfinding\MazeMapFactory.cs" />
+    <Compile Include="Pathfinding\IMazeMapFactory.cs" />
     <Compile Include="IPonyChallengeFacade.cs" />
     <Compile Include="Json models\MazeId.cs" />
     <Compile Include="Board model\Chamber.cs" />

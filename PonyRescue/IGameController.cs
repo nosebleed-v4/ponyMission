@@ -12,6 +12,6 @@ namespace PonyRescue
 
         Task<string> StartNewGame(int boardWidth, int boardHeight, string ponyName, int difficulty);
 
-        Task RescuePony(int stepDelay);
+        Task<string> RescuePony(int stepDelay);
     }
 }

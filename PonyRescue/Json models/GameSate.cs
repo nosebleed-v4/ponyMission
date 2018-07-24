@@ -12,9 +12,9 @@ namespace PonyRescue
         private GameState() { }
 
         [JsonProperty("state")]
-        public string gameState { get; set; }
+        public string State { get; set; }
 
         [JsonProperty("state-result")]
-        public string gameResult { get; set; }
+        public string GameResult { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -66,30 +67,26 @@ namespace PonyRescue
 
         private static async Task<string> ExecuteGetRequest(string url)
         {
-            try
+            //possibly add better error handling
+            var response = await client.GetAsync(url);
+            var responseString = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode != HttpStatusCode.OK)
             {
-                return await client.GetStringAsync(url);
-            }
-            catch (Exception e)
-            {
-                //implement connectivity error handling
-                throw;
+                throw new InvalidOperationException(responseString);
             }
 
+            return responseString;
         }
 
         private async Task<string> ExecutePostRequest(string url, StringContent content)
         {
+            //possibly add better error handling
             string responseString = "";
-            try
+            var response = await client.PostAsync(url, content);
+            responseString = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode != HttpStatusCode.OK)
             {
-                var response = await client.PostAsync(url, content);
-                responseString = await response.Content.ReadAsStringAsync();
-            }
-            catch (Exception e)
-            {
-                //implement connectivity error handling
-                throw;
+                throw new InvalidOperationException(responseString);
             }
             return responseString;
         }

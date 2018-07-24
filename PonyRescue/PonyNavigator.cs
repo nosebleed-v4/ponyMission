@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Windows.Navigation;
 
 namespace PonyRescue
 {
@@ -6,17 +8,36 @@ namespace PonyRescue
     {
         public Direction GetNextMove(IMazeMap mazeMap, MazeState mazeState)
         {
-            if (mazeMap.PathToExit == null)
-                mazeMap.FindShortestPath();
+            Direction returnValue = Direction.None;
+            Coordinates domokunLocation = new Coordinates(Coordinates.GetXCoordinate(mazeState.DomokunLocation, mazeState.width), Coordinates.GetYCoordinate(mazeState.DomokunLocation, mazeState.width));
+            Coordinates ponyLocation = new Coordinates(Coordinates.GetXCoordinate(mazeState.PonyLocation, mazeState.width), Coordinates.GetYCoordinate(mazeState.PonyLocation, mazeState.width));
 
-            Coordinates monsterLocation = new Coordinates(Coordinates.GetXCoordinate(mazeState.DomokunLocation, mazeState.width), Coordinates.GetYCoordinate(mazeState.DomokunLocation, mazeState.width));
+            if (mazeMap.CurrentPathToExit == null)
+                mazeMap.FindShortestPathToExit(ponyLocation);
 
-            //if monster is less than two steps away on the possible track and other routs are possible
-            //dodge
-            //else
-            //go to exit
-
-            return Direction.None;
+            Direction nextPotentialMove = mazeMap.CurrentPathToExit.Peek();
+            var nextPotentialLocation = ponyLocation.Move(nextPotentialMove);
+            if(mazeMap.IsDomokunClose(domokunLocation, nextPotentialLocation))
+            {
+                //see if we can escape
+                var possibleDodge = Enum.GetValues(typeof(Direction)).Cast<Direction>().AsEnumerable().FirstOrDefault(direction => direction != Direction.None && direction != nextPotentialMove && mazeMap.IsMoveLegal(ponyLocation, direction));
+                if (possibleDodge != default(Direction))
+                {
+                    //escape
+                    mazeMap.CurrentPathToExit.Push(possibleDodge.Inverse());
+                    returnValue = possibleDodge;
+                }
+                else
+                {
+                    //accept our fate
+                    returnValue = mazeMap.CurrentPathToExit.Pop();
+                }
+            }
+            else
+            {
+                returnValue = mazeMap.CurrentPathToExit.Pop();
+            }
+            return returnValue;
         }
     }
 }

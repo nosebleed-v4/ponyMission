@@ -7,9 +7,11 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -35,7 +37,7 @@ namespace PonyRescue
             InitializeComponent();
 
             this.PonyName.ItemsSource = new List<string>() { "Fluttershy", "Rainbow Dash", "Twilight Sparkle", "Pinkie Pie" };
-            gameController = new GameController();
+            gameController = new GameController(new PonyChallengeFacade(), new MazeMapFactory(), new PonyNavigator());
             gameController.MoveMadeEvent += MoveMade;
         }
 
@@ -48,12 +50,20 @@ namespace PonyRescue
 
         private async void RunMoveSequence(object sender, RoutedEventArgs e)
         {
-            await gameController.RescuePony(Int32.Parse(this.MoveDelay.Text));
+            var result = await gameController.RescuePony(Int32.Parse(this.MoveDelay.Text));
+
+            MessageBox.Show(result);
         }
 
         void MoveMade(object sender, EventArgs e)
         {
-            this.MazeSnapshot.Text = (e as GameEventArgs)?.snapshot ?? "";
+            if (Thread.CurrentThread == Application.Current.Dispatcher.Thread)
+                this.MazeSnapshot.Text = (e as GameEventArgs)?.snapshot ?? "";
+            else
+            {
+                this.MazeSnapshot.Dispatcher.Invoke(() => MoveMade(sender, e));
+            }
+            
         }
     }
 

@@ -10,18 +10,17 @@ namespace PonyRescue
 {
     internal class MazeMap : IMazeMap
     {
-        private Coordinates ponyLocation;
         private Coordinates exitLocation;
         private int mazeWidth;
         private int mazeHeight;
         private Dictionary<Coordinates, Chamber> Chambers = null;
-        public List<string> PathToExit { get; private set; }
+
+        public Stack<Direction> CurrentPathToExit { get; private set; }
 
         public void Initialize(int mazeStateWidth, int mazeStateHeight, int mazeStatePonyLocation, int mazeStateExitLocation, List<List<string>> data)
         {
             this.mazeWidth = mazeStateWidth;
             this.mazeHeight = mazeStateHeight;
-            this.ponyLocation = new Coordinates(Coordinates.GetXCoordinate(mazeStatePonyLocation, mazeWidth), Coordinates.GetYCoordinate(mazeStatePonyLocation, mazeWidth));
             this.exitLocation = new Coordinates(Coordinates.GetXCoordinate(mazeStateExitLocation, mazeWidth), Coordinates.GetYCoordinate(mazeStateExitLocation, mazeWidth));
 
             Chambers = new Dictionary<Coordinates, Chamber>();
@@ -49,20 +48,35 @@ namespace PonyRescue
             }
         }
 
-        public List<string> FindShortestPath()
+        public bool IsDomokunClose(Coordinates domokunLocation, Coordinates nextPotentialLocation)
         {
-            List<Coordinates> chambersToExploreStartingFromPony = new List<Coordinates>(){this.ponyLocation};
-            Chambers[this.ponyLocation].SetPathFromPony(new List<string>());
-            List<Coordinates> chambersToExploreStartingFromExit = new List<Coordinates>(){this.exitLocation};
-            Chambers[this.exitLocation].SetPathToExit(new List<string>());
+            var nextPotentialChamber = Chambers[nextPotentialLocation];
+            return domokunLocation.Equals(nextPotentialLocation) 
+                   || nextPotentialChamber.ChamberConnections.Any(direction => nextPotentialLocation.Move(direction).Equals(domokunLocation));
+        }
+
+        public Stack<Direction> FindShortestPathToExit(Coordinates ponyLocation)
+        {
+            if (CurrentPathToExit != null)
+            {
+                foreach (Chamber cham in Chambers.Values)
+                {
+                    cham.ClearPathData();
+                }
+            }
+
+            List<Coordinates> chambersWithNeighboursToExploreStartingFromPony = new List<Coordinates>(){ponyLocation};
+            Chambers[ponyLocation].SetPathFromPony(new List<Direction>());
+            List<Coordinates> chambersWithNeighboursToExploreStartingFromExit = new List<Coordinates>(){this.exitLocation};
+            Chambers[this.exitLocation].SetPathToExit(new List<Direction>());
             while(true)
             {
                 List<Coordinates> chambersToExploreStartingFromPonyNext = new List<Coordinates>();
                 //find chambers in range of pony
-                foreach (Coordinates location in chambersToExploreStartingFromPony)
+                foreach (Coordinates location in chambersWithNeighboursToExploreStartingFromPony)
                 {
                     var currentChamber = Chambers[location];
-                    foreach (Direction dir in currentChamber.ConnectedChambers)
+                    foreach (Direction dir in currentChamber.ChamberConnections)
                     {
                         var neighrouringChamber = Chambers[location.Move(dir)];
                         if (neighrouringChamber.PathFromPony == null)
@@ -71,21 +85,22 @@ namespace PonyRescue
                             {
                                 neighrouringChamber.PathToExit.Reverse();
                                 var shortestPathFound = neighrouringChamber.PathFromPony.Concat(neighrouringChamber.PathToExit).ToList();
-                                PathToExit = shortestPathFound;
-                                return shortestPathFound;
+                                shortestPathFound.Reverse();
+                                CurrentPathToExit = new Stack<Direction>(shortestPathFound);
+                                return CurrentPathToExit;
                             }
                             chambersToExploreStartingFromPonyNext.Add(neighrouringChamber.Coordinates);
                         }   
                     }
                 }
-                chambersToExploreStartingFromPony = chambersToExploreStartingFromPonyNext;
+                chambersWithNeighboursToExploreStartingFromPony = chambersToExploreStartingFromPonyNext;
 
 
-                List<Coordinates> chambersToExploreStartingFromExitNext = new List<Coordinates>();
-                foreach (Coordinates location in chambersToExploreStartingFromExit)
+                var chambersToExploreStartingFromExitNext = new List<Coordinates>();
+                foreach (Coordinates location in chambersWithNeighboursToExploreStartingFromExit)
                 {
                     var currentChamber = Chambers[location];
-                    foreach (Direction dir in currentChamber.ConnectedChambers)
+                    foreach (Direction dir in currentChamber.ChamberConnections)
                     {
                         var neighrouringChamber = Chambers[location.Move(dir)];
                         if (neighrouringChamber.PathToExit == null)
@@ -94,64 +109,72 @@ namespace PonyRescue
                             {
                                 neighrouringChamber.PathToExit.Reverse();
                                 var shortestPathFound = neighrouringChamber.PathFromPony.Concat(neighrouringChamber.PathToExit).ToList();
-                                PathToExit = shortestPathFound;
-                                return shortestPathFound;
+                                shortestPathFound.Reverse();
+                                CurrentPathToExit = new Stack<Direction>(shortestPathFound);
+                                return CurrentPathToExit;
                             }
                             chambersToExploreStartingFromExitNext.Add(neighrouringChamber.Coordinates);
                         }
                     }
                 }
-                chambersToExploreStartingFromExit = chambersToExploreStartingFromExitNext;
+                chambersWithNeighboursToExploreStartingFromExit = chambersToExploreStartingFromExitNext;
             };
         }
 
-        //this was an interesting experiment, but the gain does not seem that great...
-        public async Task<List<string>> FindShortestPathAsync()
+        public async Task<Stack<Direction>> FindShortestPathAsync(Coordinates ponyLocation)
         {
+            if (CurrentPathToExit != null)
+            {
+                foreach (Chamber cham in Chambers.Values)
+                {
+                    cham.ClearPathData();
+                }
+            }
             var cancelationTokenSource = new CancellationTokenSource(10000); //10 seconds timeout
 
-            Task<List<string>> SearchFromPonyLocation = Task.Run(() =>
+            Task<List<Direction>> searchFromPonyLocation = Task.Run(() =>
             {
-                var startingLocation = this.ponyLocation;
-                Func<Chamber, List<string>, Direction, bool> fillPathInfoInChamber = (Chamber chamber, List<string> path, Direction direction) =>
+                var startingLocation = ponyLocation;
+                bool FillPathInfoInChamber(Chamber chamber, List<Direction> path, Direction direction)
                 {
                     return chamber.SetPathFromPony(path, direction);
-                };
-                Func<Chamber, List<string>> propertySelector = (Chamber c) => c.PathFromPony;
-                return PopulatePathFindingData(startingLocation, fillPathInfoInChamber, propertySelector, cancelationTokenSource.Token);
+                }
+                List<Direction> PropertySelector(Chamber c) => c.PathFromPony;
+                return PopulatePathFindingData(startingLocation, FillPathInfoInChamber, PropertySelector, cancelationTokenSource.Token);
             }, cancelationTokenSource.Token);
 
-            Task<List<string>> SearchFromExitLocation = Task.Run(() =>
+            Task<List<Direction>> searchFromExitLocation = Task.Run(() =>
             {
                 var startingLocation = this.exitLocation;
-                Func<Chamber, List<string>, Direction, bool> fillPathInfoInChamber = (Chamber chamber, List<string> path, Direction direction) =>
+                bool FillPathInfoInChamber(Chamber chamber, List<Direction> path, Direction direction)
                 {
                     return chamber.SetPathToExit(path, direction);
-                };
-                Func<Chamber, List<string>> propertySelector = (Chamber c) => c.PathToExit;
-                return PopulatePathFindingData(startingLocation, fillPathInfoInChamber, propertySelector, cancelationTokenSource.Token);
+                }
+                List<Direction> PropertySelector(Chamber c) => c.PathToExit;
+                return PopulatePathFindingData(startingLocation, FillPathInfoInChamber, PropertySelector, cancelationTokenSource.Token);
             }, cancelationTokenSource.Token);
 
-            var firstTaskToComplete = await Task.WhenAny(new[] { SearchFromPonyLocation, SearchFromExitLocation });
+            var firstTaskToComplete = await Task.WhenAny(new[] { searchFromPonyLocation, searchFromExitLocation });
             cancelationTokenSource.Cancel();
-            var outcome = firstTaskToComplete.Status == TaskStatus.RanToCompletion ? firstTaskToComplete.Result : null;
-            this.PathToExit = outcome;
-            return outcome;
+            var outcome = firstTaskToComplete.Status == TaskStatus.RanToCompletion ? firstTaskToComplete.Result : new List<Direction>();
+            outcome.Reverse();
+            this.CurrentPathToExit = new Stack<Direction>(outcome);
+            return CurrentPathToExit;
         }
 
-        private List<string> PopulatePathFindingData(Coordinates startingLocation, Func<Chamber, List<string>, Direction, bool> fillPathInfoInChamber, Func<Chamber, List<string>> propertySelector, CancellationToken cancelationToken)
+        private List<Direction> PopulatePathFindingData(Coordinates startingLocation, Func<Chamber, List<Direction>, Direction, bool> fillPathInfoInChamber, Func<Chamber, List<Direction>> propertySelector, CancellationToken cancelationToken)
         {
             List<Coordinates> chambersToExplore = new List<Coordinates>() { startingLocation };
-            fillPathInfoInChamber(Chambers[startingLocation], new List<string>(), Direction.None);
+            fillPathInfoInChamber(Chambers[startingLocation], new List<Direction>(), Direction.None);
             while (true)
             {
                 if (cancelationToken.IsCancellationRequested)
-                    return new List<string>();
+                    return new List<Direction>();
                 List<Coordinates> chambersToExploreNext = new List<Coordinates>();
                 foreach (Coordinates location in chambersToExplore)
                 {
                     var currentChamber = Chambers[location];
-                    foreach (Direction dir in currentChamber.ConnectedChambers) //the neighbours could be inferred dynamically during the path search
+                    foreach (Direction dir in currentChamber.ChamberConnections) //the neighbours could be inferred dynamically during the path search
                     {
                         var neighrouringChamber = Chambers[location.Move(dir)];
                         if (propertySelector(neighrouringChamber) == null)
@@ -167,6 +190,11 @@ namespace PonyRescue
                 }
                 chambersToExplore = chambersToExploreNext;
             }
+        }
+
+        public bool IsMoveLegal(Coordinates ponyLocation, Direction direction)
+        {
+            return Chambers[ponyLocation].ChamberConnections.Contains(direction);
         }
     }
 }
