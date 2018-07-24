@@ -47,7 +47,7 @@ namespace PonyRescue
                 MoveMadeEvent?.Invoke(this, new GameEventArgs() {snapshot = mazeSnapshot});
 
                 await Task.Delay(stepDelay);
-            } while (mazeMap.CurrentPathToExit.Count > 0);
+            } while (mazeMap.CurrentPathToExit.Count > 0 && mazeState.gameState.State.ToLower() == "active");
 
             mazeState = await ponyChallangeFacade.GetMazeStateAsync(mazeId);
             return mazeState.gameState.GameResult;
